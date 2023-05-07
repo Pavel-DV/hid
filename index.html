@@ -1,9 +1,10 @@
 <body>
-<button id="request-hid-device">request</button>
+<button id="button">button</button>
 </body>
 <script>
-    let requestButton = document.getElementById("request-hid-device");
-    requestButton.addEventListener("click", async () => {
+    const button = document.getElementById('button');
+
+    button.onclick = async () => {
         const devices = await navigator.hid.requestDevice({ filters: [], });
 
         devices.map(async device => {
@@ -11,11 +12,20 @@
             console.log(device);
 
             device.oninputreport = processControllerReport;
+
+            button.onclick = async () => {
+                await device.sendReport(0x00, new Uint8Array([ 0xA0, 1, 1, 0xA2 ]));
+
+                setTimeout(async () => {
+                    await device.sendReport(0x00, new Uint8Array([ 0xA0, 1, 0, 0xA1 ]));
+                }, 50);
+            }
+
         })
 
         function processControllerReport(report) {
             console.log(report)
         }
 
-    });
+    };
 </script>
