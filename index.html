@@ -1,31 +1,63 @@
 <body>
-<button id="button">button</button>
+    <button id="buttonGrant">Grant</button>
+    <button id="buttonClick">Click</button>
+    <canvas id="canvas" width="100" height="100" style="background-color: antiquewhite"></canvas>
+
+    <h1 id="timer"><span>0:00</span><span>.00</span></h1>
+    <script src="timer.js"></script>
+
 </body>
 <script>
-    const button = document.getElementById('button');
+    const directionUp = 1;
+    const canvas = document.getElementById('canvas')
+    const buttonGrant = document.getElementById('buttonGrant');
+    const buttonClick = document.getElementById('buttonClick');
+    const state = { direction: -directionUp }
 
-    button.onclick = async () => {
-        const devices = await navigator.hid.requestDevice({ filters: [], });
+    buttonGrant.onclick = grant;
+    buttonClick.onmousedown = doClick;
+    canvas.onmousemove = onmousemove;
+    canvas.onclick = canvas.requestPointerLock;
 
-        devices.map(async device => {
-            await device.open()
-            console.log(device);
+    function onmousemove(e) {
+        const movement = Math.sign(e.movementY)
 
-            device.oninputreport = processControllerReport;
-
-            button.onclick = async () => {
-                await device.sendReport(0x00, new Uint8Array([ 0xA0, 1, 1, 0xA2 ]));
-
-                setTimeout(async () => {
-                    await device.sendReport(0x00, new Uint8Array([ 0xA0, 1, 0, 0xA1 ]));
-                }, 50);
-            }
-
-        })
-
-        function processControllerReport(report) {
-            console.log(report)
+        if (state.direction === directionUp && movement === -directionUp) {
+            doClick();
         }
 
-    };
+        state.direction = movement === 0 ? state.direction : movement
+    }
+
+    async function doClick() {
+        console.log('click')
+
+        console.log(new Date().getTime())
+
+        if (state.device === undefined) {
+            return
+        }
+
+        // await
+            state.device.sendReport(0x00, new Uint8Array([0xA0, 1, 1, 0xA2]));
+
+        console.log(new Date().getTime())
+
+
+        await wait(200)
+
+        // await new Promise(resolve => setTimeout(resolve, 200));
+
+        console.log(new Date().getTime())
+
+        state.device.sendReport(0, new Uint8Array([0xA0, 1, 0, 0xA1]));
+    }
+
+    async function grant() {
+        state.device = (await navigator.hid.requestDevice({ filters: [], }))[0];
+
+        if (state.device !== undefined) {
+            state.device.open();
+        }
+    }
 </script>
